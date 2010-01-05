@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<wave_config>
+   <wave_state>
+   </wave_state>
+   <db_ref_list>
+      <db_ref path="isim.wdb" id="1" type="auto">
+         <top_modules>
+            <top_module name="system_tb" />
+         </top_modules>
+      </db_ref>
+   </db_ref_list>
+   <wave_markers>
+      <marker time="91335872316000" label="" />
+   </wave_markers>
+   <wvobject fp_name="/system_tb/sys_clk" type="logic" db_ref_id="1">
+      <obj_property name="ElementShortName">sys_clk</obj_property>
+      <obj_property name="ObjectShortName">sys_clk</obj_property>
+   </wvobject>
+   <wvobject fp_name="/system_tb/resetin" type="logic" db_ref_id="1">
+      <obj_property name="DisplayName">label</obj_property>
+      <obj_property name="ElementShortName">resetin</obj_property>
+      <obj_property name="ObjectShortName">resetin</obj_property>
+      <obj_property name="label">resetin</obj_property>
+   </wvobject>
+   <wvobject fp_name="/system_tb/system/flash_adr" type="array" db_ref_id="1">
+      <obj_property name="ElementShortName">flash_adr[23:0]</obj_property>
+      <obj_property name="ObjectShortName">flash_adr[23:0]</obj_property>
+      <obj_property name="Radix">HEXRADIX</obj_property>
+   </wvobject>
+   <wvobject fp_name="/system_tb/system/flash_d" type="array" db_ref_id="1">
+      <obj_property name="ElementShortName">flash_d[7:0]</obj_property>
+      <obj_property name="ObjectShortName">flash_d[7:0]</obj_property>
+      <obj_property name="Radix">HEXRADIX</obj_property>
+   </wvobject>
+   <wvobject fp_name="/system_tb/system/sys_rst" type="logic" db_ref_id="1">
+      <obj_property name="ElementShortName">sys_rst</obj_property>
+      <obj_property name="ObjectShortName">sys_rst</obj_property>
+   </wvobject>
+   <wvobject fp_name="/system_tb/system/cpu/cpu/I_CYC_O" type="logic" db_ref_id="1">
+      <obj_property name="ElementShortName">I_CYC_O</obj_property>
+      <obj_property name="ObjectShortName">I_CYC_O</obj_property>
+   </wvobject>
+   <wvobject fp_name="/system_tb/system/cpu/cpu/I_STB_O" type="logic" db_ref_id="1">
+      <obj_property name="ElementShortName">I_STB_O</obj_property>
+      <obj_property name="ObjectShortName">I_STB_O</obj_property>
+   </wvobject>
+   <wvobject fp_name="/system_tb/system/cpu/cpu/I_ADR_O" type="array" db_ref_id="1">
+      <obj_property name="ElementShortName">I_ADR_O[31:0]</obj_property>
+      <obj_property name="ObjectShortName">I_ADR_O[31:0]</obj_property>
+   </wvobject>
+   <wvobject fp_name="/system_tb/system/cpu/cpu/D_CYC_O" type="logic" db_ref_id="1">
+      <obj_property name="ElementShortName">D_CYC_O</obj_property>
+      <obj_property name="ObjectShortName">D_CYC_O</obj_property>
+   </wvobject>
+   <wvobject fp_name="/system_tb/system/cpu/cpu/I_DAT_O" type="array" db_ref_id="1">
+      <obj_property name="ElementShortName">I_DAT_O[31:0]</obj_property>
+      <obj_property name="ObjectShortName">I_DAT_O[31:0]</obj_property>
+   </wvobject>
+   <wvobject fp_name="/system_tb/system/cpu/cpu/I_DAT_I" type="array" db_ref_id="1">
+      <obj_property name="ElementShortName">I_DAT_I[31:0]</obj_property>
+      <obj_property name="ObjectShortName">I_DAT_I[31:0]</obj_property>
+      <obj_property name="Radix">HEXRADIX</obj_property>
+   </wvobject>
+   <wvobject fp_name="/system_tb/system/uart/tx_data" type="array" db_ref_id="1">
+      <obj_property name="ElementShortName">tx_data[7:0]</obj_property>
+      <obj_property name="ObjectShortName">tx_data[7:0]</obj_property>
+   </wvobject>
+   <wvobject fp_name="/system_tb/system/uart/csr_selected" type="logic" db_ref_id="1">
+      <obj_property name="ElementShortName">csr_selected</obj_property>
+      <obj_property name="ObjectShortName">csr_selected</obj_property>
+   </wvobject>
+   <wvobject fp_name="/system_tb/system/uart/uart_txd" type="logic" db_ref_id="1">
+      <obj_property name="ElementShortName">uart_txd</obj_property>
+      <obj_property name="ObjectShortName">uart_txd</obj_property>
+   </wvobject>
+   <wvobject fp_name="/system_tb/system/uart/csr_di" type="array" db_ref_id="1">
+      <obj_property name="ElementShortName">csr_di[31:0]</obj_property>
+      <obj_property name="ObjectShortName">csr_di[31:0]</obj_property>
+      <obj_property name="Radix">UNSIGNEDDECRADIX</obj_property>
+   </wvobject>
+   <wvobject fp_name="/system_tb/system/uart/csr_a" type="array" db_ref_id="1">
+      <obj_property name="ElementShortName">csr_a[13:0]</obj_property>
+      <obj_property name="ObjectShortName">csr_a[13:0]</obj_property>
+   </wvobject>
+</wave_config>
