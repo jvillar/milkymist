@@ -20,7 +20,7 @@ system: $(SRC)
 	iverilog -D SIMULATION -I $(BOARD_DIR) -I $(CORES_DIR)/lm32/rtl -o system $(SRC)
 
 bios.rom: ../../../software/bios/bios.bin
-	../../../tools/bin2hex ../../../software/bios/bios.bin bios.rom 32768
+	../../../tools/bin2hex ../../../software/bios/bios.bin bios.rom 32768 32
 
 clean:
 	rm -f verilog.log system
