@@ -1,7 +1,7 @@
 MMDIR=../..
 include $(MMDIR)/software/include.mak
 
-OBJECTS_ALL=divsi3.o libc.o crc16.o crc32.o console.o cfcard.o cffat.o system.o board.o irq.o
+OBJECTS_ALL=divsi3.o libc.o crc16.o crc32.o console.o cfcard.o cffat.o system.o board.o irq.o memctrl.o hpdmc.o yadmc.o netctrl.o eth.o
 OBJECTS=$(OBJECTS_ALL) softfloat.o softfloat-glue.o vsnprintf.o atof.o malloc.o uart-async.o
 OBJECTS_LIGHT=$(OBJECTS_ALL) vsnprintf-nofloat.o uart.o
 
@@ -29,6 +29,11 @@ atof.o: ../../software/include/stdlib.h ../../software/include/ctype.h
 board.o: ../../software/include/hw/sysctl.h
 board.o: ../../software/include/hw/common.h ../../software/include/stdlib.h
 board.o: ../../software/include/board.h
+memctrl.o: ../../software/include/board.h ../../software/include/stdlib.h ../../software/include/hw/hpdmc.h ../../software/include/hw/yadmc.h
+hpdmc.o:  ../../software/include/hw/hpdmc.h ../../software/include/memctrl.h ../../software/include/system.h ../../software/include/stdio.h ../../software/include/console.h
+yadmc.o:  ../../software/include/hw/yadmc.h ../../software/include/memctrl.h ../../software/include/system.h ../../software/include/stdio.h ../../software/include/console.h
+netctrl.o: ../../software/include/board.h ../../software/include/stdlib.h ../../software/include/hw/eth.h
+eth.o:  ../../software/include/hw/eth.h ../../software/include/stdio.h
 cfcard.o: ../../software/include/hw/systemace.h
 cfcard.o: ../../software/include/hw/common.h ../../software/include/cfcard.h
 cfcard.o: ../../software/include/console.h
@@ -51,6 +56,7 @@ softfloat-glue.o: softfloat.h
 softfloat.o: milieu.h softfloat.h softfloat-macros.h softfloat-specialize.h
 system.o: ../../software/include/irq.h ../../software/include/uart.h
 system.o: ../../software/include/hw/fmlbrg.h ../../software/include/system.h
+system.o: ../../software/include/board.h
 uart-async.o: ../../software/include/uart.h ../../software/include/irq.h
 uart-async.o: ../../software/include/hw/uart.h
 uart-async.o: ../../software/include/hw/common.h

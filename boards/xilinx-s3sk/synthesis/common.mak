@@ -13,7 +13,7 @@ flash: build/system.mcs
 
 flashmem: 
 	- killall gtkterm
-	../../../build_bios.sh
+	cd ../../../ && ./build_bios.sh
 	cd ../../../tools/norflasher && impact -batch impact.batch
 	../../../tools/norflasher/norflasher.py /dev/ttyUSB0 --erase --program ../../../software/bios/bios.mcs
 

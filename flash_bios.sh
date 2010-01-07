@@ -44,8 +44,20 @@ if [ $BOARD == "xilinx-ml401" ] ; then
 		echo "OK"
 	fi
 else
-	echo "Unsupported board, aborting."
-	exit
+	if [ $BOARD == "xilinx-s3sk" ] ; then
+		echo -n "  Writing flash..."
+		cd $BASEDIR/boards/xilinx-s3sk/synthesis && make -f common.mak flashmem
+		ml401-flasher $BIOSFILE >> $LOGFILE 2>&1
+		if [ "$?" != 0 ] ; then
+			echo "FAILED"
+			exit 1
+		else
+			echo "OK"
+		fi
+	else
+		echo "Unsupported board, aborting."
+		exit
+	fi
 fi
 
 echo "Flashing complete!"

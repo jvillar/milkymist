@@ -1,6 +1,7 @@
 /*
  * Milkymist VJ SoC (Software)
  * Copyright (C) 2007, 2008, 2009 Sebastien Bourdeauducq
+ * Copyright (C) 2010 Jose Ignacio Villar
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -26,16 +27,33 @@ enum {
 	MEMCARD_MICROSD
 };
 
+enum {
+	MEMCTRL_NONE,
+	DDR_SDRAM_HPDMC,
+	SDR_SDRAM_YADMC,
+	DDR_SDRAM_GENERIC,
+	SDR_SDRAM_GENERIC
+};
+
+enum {
+	NETCTRL_NONE,
+	OPENCORES_ETH_10_100
+};
+
 struct board_desc {
 	unsigned int id;
 	char name[BOARD_NAME_LEN];
 	unsigned int clk_frequency;
-	unsigned int sdram_size;
-	unsigned int ddr_clkphase;
-	unsigned int ddr_idelay;
-	unsigned int ddr_dqsdelay;
+	unsigned int fml;
+	unsigned int netctrl_type;
+	unsigned int memctrl_type;
+	unsigned int memctrl_membase;
+	unsigned int memctrl_memsize;
 	unsigned int memory_card;
+	unsigned int vga;
 };
+
+extern const struct board_desc *board_desc;
 
 const struct board_desc *get_board_desc_id(unsigned int id);
 const struct board_desc *get_board_desc();

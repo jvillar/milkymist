@@ -15,211 +15,43 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+
 #include <stdio.h>
 #include <console.h>
-#include <string.h>
 #include <uart.h>
-#include <cffat.h>
-#include <crc.h>
 #include <system.h>
-#include <board.h>
+#include <irq.h>
+#include <cffat.h>
+#include <string.h>
+#include <crc.h>
 #include <version.h>
+#include <board.h>
+#include <memctrl.h>
+#include <netctrl.h>
+
 #include <hw/hpdmc.h>
+#include <hw/yadmc.h>
+#include <hw/eth.h>
 #include <hw/vga.h>
 #include <hw/fmlbrg.h>
 #include <hw/sysctl.h>
 #include <hw/gpio.h>
 #include <hw/uart.h>
 
+#include <hal/time.h>
+
+#include <net/net.h>
+
 #include "boot.h"
 #include "splash.h"
 
-const struct board_desc *brd_desc;
 
 /* SDRAM functions */
 
 static int sdram_enabled;
-static int dqs_ps;
-
-static void ddrinit()
-{
-	volatile unsigned int i;
-
-	if(!sdram_enabled) {
-		printf("E: Command disabled\n");
-		return;
-	}
-	
-	putsnonl("I: Initializing SDRAM [DDR200 CL=2 BL=8]...");
-	/* Bring CKE high */
-	CSR_HPDMC_SYSTEM = HPDMC_SYSTEM_BYPASS|HPDMC_SYSTEM_RESET|HPDMC_SYSTEM_CKE;
-	for(i=0;i<2;i++);
-	CSR_HPDMC_BYPASS = 0x400B;	/* Precharge All */
-	for(i=0;i<2;i++);
-	CSR_HPDMC_BYPASS = 0x2000F;	/* Load Extended Mode Register */
-	for(i=0;i<2;i++);
-	CSR_HPDMC_BYPASS = 0x123F;	/* Load Mode Register */
-	for(i=0;i<200;i++);
-	CSR_HPDMC_BYPASS = 0x400B;	/* Precharge All */
-	for(i=0;i<2;i++);
-	CSR_HPDMC_BYPASS = 0xD;		/* Auto Refresh */
-	for(i=0;i<8;i++);
-	CSR_HPDMC_BYPASS = 0xD;		/* Auto Refresh */
-	for(i=0;i<8;i++);
-	CSR_HPDMC_BYPASS = 0x23F;	/* Load Mode Register, Enable DLL */
-	for(i=0;i<200;i++);
-	/* Leave Bypass mode and bring up hardware controller */
-	CSR_HPDMC_SYSTEM = HPDMC_SYSTEM_CKE;
-	
-	/* Set up pre-programmed data bus timings */
-	CSR_HPDMC_IODELAY = HPDMC_IDELAY_RST;
-	for(i=0;i<brd_desc->ddr_idelay;i++)
-		CSR_HPDMC_IODELAY = HPDMC_IDELAY_CE|HPDMC_IDELAY_INC;
-	
-	dqs_ps = brd_desc->ddr_dqsdelay;
-	for(i=0;i<brd_desc->ddr_dqsdelay;i++) {
-		CSR_HPDMC_IODELAY = HPDMC_DQSDELAY_CE|HPDMC_DQSDELAY_INC;
-		while(!(CSR_HPDMC_IODELAY & HPDMC_DQSDELAY_RDY));
-	}
-	
-	printf("OK\n");
-}
-
-static int plltest()
-{
-	int ok1, ok2;
-
-	if(!sdram_enabled) {
-		printf("E: Command disabled\n");
-		return 0;
-	}
-
-	printf("I: Checking if SDRAM clocking is functional:\n");
-	ok1 = CSR_HPDMC_IODELAY & HPDMC_PLL1_LOCKED;
-	ok2 = CSR_HPDMC_IODELAY & HPDMC_PLL2_LOCKED;
-	printf("I:   PLL#1: %s\n", ok1 ? "Locked" : "Error");
-	printf("I:   PLL#2: %s\n", ok2 ? "Locked" : "Error");
-	return(ok1 && ok2);
-}
-
-static int memtest(unsigned int div)
-{
-	unsigned int *testbuf = (unsigned int *)SDRAM_BASE;
-	unsigned int expected;
-	unsigned int i;
-	unsigned int size;
-
-	if(!sdram_enabled) {
-		printf("E: Command disabled\n");
-		return 0;
-	}
-	
-	putsnonl("I: SDRAM test...");
-
-	size = brd_desc->sdram_size*1024*1024/(4*div);
-	for(i=0;i<size;i++)
-		testbuf[i] = i;
-
-	/* NB. The Mico32 cache (Level-1) is write-through,
-	 * therefore there is no order to flush the cache hierarchy.
-	 */
-	asm volatile( /* Invalidate Level-1 data cache */
-		"wcsr DCC, r0\n"
-		"nop\n"
-	);
-	flush_bridge_cache(); /* Invalidate Level-2 cache */
-
-	for(i=0;i<size;i++) {
-		expected = i;
-		if(testbuf[i] != expected) {
-			printf("\nE: Failed offset 0x%08x (got 0x%08x, expected 0x%08x)\n", i, testbuf[i], expected);
-			return 0;
-		}
-	}
-
-	printf("%u/%uMB tested OK\n", brd_desc->sdram_size/div, brd_desc->sdram_size);
-	return 1;
-}
-
-static void calibrate()
-{
-	int taps;
-	int quit;
-	char c;
-
-	if(!sdram_enabled) {
-		printf("E: Command disabled\n");
-		return;
-	}
-	
-	printf("================================\n");
-	printf("DDR SDRAM calibration tool\n");
-	printf("================================\n");
-	printf("Memo:\n");
-	printf("[> Input Delay\n");
-	printf(" r = reset to 0 taps\n");
-	printf(" u = add 1 tap\n");
-	printf(" d = remove 1 tap\n");
-	printf("[> DQS output phase\n");
-	printf(" U = increase phase\n");
-	printf(" D = decrease phase\n");
-	printf("[> Misc\n");
-	printf(" t = load image to framebuffer\n");
-	printf(" q = quit\n");
-	
-	CSR_VGA_RESET = 0;
-	
-	CSR_HPDMC_IODELAY = HPDMC_IDELAY_RST;
-	
-	taps = 0;
-	quit = 0;
-	while(!quit) {
-		printf("Taps: %02d (78ps each) - DQS phase: %04d/255\r", taps, dqs_ps);
-		c = readchar();
-		switch(c) {
-			case 'q':
-				quit = 1;
-				break;
-			case 'r':
-				taps = 0;
-				CSR_HPDMC_IODELAY = HPDMC_IDELAY_RST;
-				break;
-			case 'u':
-				if(taps < 63) {
-					taps++;
-					CSR_HPDMC_IODELAY = HPDMC_IDELAY_CE|HPDMC_IDELAY_INC;
-				}
-				break;
-			case 'd':
-				if(taps > 0) {
-					taps--;
-					CSR_HPDMC_IODELAY = HPDMC_IDELAY_CE;
-				}
-				break;
-			case 'U':
-				if(dqs_ps < 255) {
-					dqs_ps++;
-					CSR_HPDMC_IODELAY = HPDMC_DQSDELAY_CE|HPDMC_DQSDELAY_INC;
-					while(!(CSR_HPDMC_IODELAY & HPDMC_DQSDELAY_RDY));
-				}
-				break;
-			case 'D':
-				if(dqs_ps > 0) {
-					dqs_ps--;
-					CSR_HPDMC_IODELAY = HPDMC_DQSDELAY_CE;
-					while(!(CSR_HPDMC_IODELAY & HPDMC_DQSDELAY_RDY));
-				}
-				break;
-			case 't':
-				splash_display((void *)SDRAM_BASE);
-				break;
-		}
-	}
-
-	CSR_VGA_RESET = VGA_RESET;
-
-	printf("\n");
-}
+const struct board_desc *board_desc;
+struct memctrl_desc *memctrl_desc;
+struct netctrl_desc *netctrl_desc;
 
 /* General address space functions */
 
@@ -392,7 +224,7 @@ static int lscb(const char *filename, const char *longname, void *param)
 
 static void ls()
 {
-	if(brd_desc->memory_card == MEMCARD_NONE) {
+	if(board_desc->memory_card == MEMCARD_NONE) {
 		printf("E: No memory card on this board\n");
 		return;
 	}
@@ -406,7 +238,7 @@ static void load(char *filename, char *addr)
 	char *c;
 	unsigned int *addr2;
 
-	if(brd_desc->memory_card == MEMCARD_NONE) {
+	if(board_desc->memory_card == MEMCARD_NONE) {
 		printf("E: No memory card on this board\n");
 		return;
 	}
@@ -425,26 +257,78 @@ static void load(char *filename, char *addr)
 	cffat_done();
 }
 
-/* Init + command line */
+static void uptime()
+{
+	struct timestamp now;
+	int days = 0;
+	int hours = 0;
+	int mins = 0;
+	int secs = 0;
 
+	time_get(&now);
+	secs = now.sec;
+	
+	days = (now.sec / 86400);
+	secs = (now.sec % 86400);
+	hours= (secs / 3600);
+	secs = (secs % 3600);
+	mins = (secs / 60);
+	secs = (secs % 60);
+
+	printf("System up for %d days, %02d:%02d:%02d\n", days, hours, mins, secs);
+}
+
+static void netcfg(char *ip, char *mask, char *gateway)
+{
+	if((*ip == 0) || (*mask == 0) || (*gateway == 0)) {
+		printf("IP:      %s", inet_ntoa(netctrl_desc->ip));
+		printf("\nnetmask: %s", inet_ntoa(netctrl_desc->mask)); 
+		printf("\ngateway: %s", inet_ntoa(netctrl_desc->gw_ip)); 
+		printf("\n\nnetcfg [<ip> <mask> <gateway>]\n");
+	}
+	else {
+		netctrl_desc->ip = inet_aton(ip);
+		netctrl_desc->mask = inet_aton(mask);
+		netctrl_desc->gw_ip = inet_aton(gateway);
+		printf("Restarting network with new parameters...");
+		NetStartAgain();
+	}
+
+	return 0;
+}
+
+
+/* Init + command line */
 static void help()
 {
 	puts("This is the Milkymist BIOS debug shell.");
 	puts("It is used for system development and maintainance, and not");
 	puts("for regular operation.\n");
 	puts("Available commands:");
-	puts("plltest    - print status of the SDRAM clocking PLLs");
-	puts("memtest    - extended SDRAM test");
-	puts("calibrate  - run DDR SDRAM calibration tool");
-	puts("flush      - flush FML bridge cache");
+	puts("uptime    - tell how long the system has been running");
+	if(sdram_enabled && memctrl_desc->plltest_function != NULL) 
+		puts("plltest    - print status of the SDRAM clocking PLLs");
+	if(sdram_enabled) 
+		puts("memtest    - extended SDRAM test");
+	if(sdram_enabled && memctrl_desc->calibrationmenu_function != NULL)
+		puts("calibrate  - run DDR SDRAM calibration tool");
+	if(sdram_enabled && memctrl_desc->cacheflush_function != NULL)
+		puts("flush      - flush FML bridge cache");
 	puts("mr         - read address space");
 	puts("mw         - write address space");
 	puts("mc         - copy address space");
 	puts("crc        - compute CRC32 of a part of the address space");
-	puts("ls         - list files on the memory card");
-	puts("load       - load a file from the memory card");
+	if(board_desc->memory_card != MEMCARD_NONE) {
+		puts("ls         - list files on the memory card");
+		puts("load       - load a file from the memory card");
+		puts("cardboot   - attempt booting from memory card");
+	}
 	puts("serialboot - attempt SFL boot");
-	puts("cardboot   - attempt booting from memory card");
+	if(netctrl_desc->type != NETCTRL_NONE) {
+		puts("netcfg     - configure self IP, netmask and gateway");
+		puts("tftp       - load a file from the network using tftp");
+	}
+
 }
 
 static char *get_token(char **str)
@@ -463,17 +347,44 @@ static char *get_token(char **str)
 	return d;
 }
 
+
+void time_tick()
+{
+	;
+}
+
+	
 static void do_command(char *c)
 {
 	char *token;
-
+	int errors;
 	token = get_token(&c);
 
-	if(strcmp(token, "plltest") == 0) plltest();
-	else if(strcmp(token, "memtest") == 0) memtest(1);
-	else if(strcmp(token, "calibrate") == 0) calibrate();
-	else if(strcmp(token, "flush") == 0) flush_bridge_cache();
+	if(strcmp(token, "uptime") == 0) uptime();
 
+	else if(strcmp(token, "plltest") == 0) {
+		if(sdram_enabled && memctrl_desc->plltest_function != NULL) 
+			memctrl_desc->plltest_function(1);
+		else
+			printf("E: Memory controller is disabled or command is not available\n");
+	}
+	else if(strcmp(token, "calibrate") == 0) {
+		if(sdram_enabled && memctrl_desc->calibrationmenu_function != NULL)
+			memctrl_desc->calibrationmenu_function(1);
+		else
+			printf("E: Memory controller is disabled or command is not available\n");
+	}
+	else if(strcmp(token, "flush") == 0) {
+		if(sdram_enabled && memctrl_desc->cacheflush_function != NULL)
+			memctrl_desc->cacheflush_function(1);
+		else
+			printf("E: Memory controller is disabled or command is not available\n");
+	}
+	else if(strcmp(token, "memtest") == 0) {
+		errors = memctrl_desc->memtest_function(board_desc->memctrl_memsize*1024*1024, 0);
+		if(errors == 0) printf("I: MEMTEST OK\n");
+		else printf("E: MEMTEST FAILED with %d errors\n", errors);
+	}
 	else if(strcmp(token, "mr") == 0) mr(get_token(&c), get_token(&c));
 	else if(strcmp(token, "mw") == 0) mw(get_token(&c), get_token(&c), get_token(&c));
 	else if(strcmp(token, "mc") == 0) mc(get_token(&c), get_token(&c), get_token(&c));
@@ -481,10 +392,30 @@ static void do_command(char *c)
 	
 	else if(strcmp(token, "ls") == 0) ls();
 	else if(strcmp(token, "load") == 0) load(get_token(&c), get_token(&c));
-	
+
 	else if(strcmp(token, "serialboot") == 0) serialboot();
-	else if(strcmp(token, "cardboot") == 0) cardboot(0);
-	
+	else if(strcmp(token, "cardboot") == 0) {
+		if(board_desc->memory_card != MEMCARD_NONE)
+			cardboot(0);
+		else
+			printf("E: Data storage card is not present\n");
+	}
+	else if(strcmp(token, "netcfg") == 0)
+	{
+		if(netctrl_desc->type != NETCTRL_NONE)
+			netcfg(get_token(&c), get_token(&c), get_token(&c));
+		else
+			printf("E: Network controller is not present\n");
+	}
+	else if(strcmp(token, "tftp") == 0) {
+		if(netctrl_desc->type != NETCTRL_NONE) {
+			TftpSetFileName(get_token(&c));
+			NetLoop(TFTP);
+		}
+		else
+			printf("E: Network controller is not present\n");
+	}
+
 	else if(strcmp(token, "help") == 0) help();
 	
 	else if(strcmp(token, "") != 0)
@@ -536,11 +467,15 @@ static void crcbios()
 
 static void display_board()
 {
-	if(brd_desc == NULL) {
+	if(board_desc == NULL) {
 		printf("E: Running on unknown board (ID=0x%08x), startup aborted.\n", CSR_SYSTEM_ID);
 		while(1);
 	}
-	printf("I: Running on %s\n", brd_desc->name);
+	else if(memctrl_desc == NULL) {
+		printf("E: Running with unknown memory controller (TYPE=0x%08x), startup aborted.\n", board_desc->memctrl_type);
+		while(1);
+	}
+	printf("I: Running on %s using %s\n", board_desc->name, memctrl_desc->name);
 }
 
 static const char banner[] =
@@ -552,10 +487,13 @@ static const char banner[] =
 
 static void boot_sequence()
 {
-	splash_display((void *)(SDRAM_BASE+1024*1024*(brd_desc->sdram_size-4)));
+	if(board_desc->vga) {
+		splash_display((void *)(SDRAM_BASE+1024*1024*(board_desc->memctrl_memsize-4)));
+	}
+
 	if(test_user_abort()) {
 		serialboot(1);
-		if(brd_desc->memory_card != MEMCARD_NONE) {
+		if(board_desc->memory_card != MEMCARD_NONE) {
 			if(CSR_GPIO_IN & GPIO_DIP1)
 				cardboot(1);
 			else
@@ -569,36 +507,50 @@ int main(int warm_boot, char **dummy)
 {
 	char buffer[64];
 
-	brd_desc = get_board_desc();
+	irq_setmask(0);
+	irq_enable(1);
+
+	board_desc = get_board_desc();
+	memctrl_desc = get_memctrl_desc();
+	netctrl_desc = get_netctrl_desc();
 
 	/* Check for double baud rate */
-	if(brd_desc != NULL) {
+	if(board_desc != NULL) {
 		if(CSR_GPIO_IN & GPIO_DIP2)
-			CSR_UART_DIVISOR = brd_desc->clk_frequency/230400/16;
+			CSR_UART_DIVISOR = board_desc->clk_frequency/230400/16;
 	}
 
 	/* Display a banner as soon as possible to show that the system is alive */
 	putsnonl(banner);
-	
+
 	crcbios();
 	display_board();
+
+	time_init();
 
 	sdram_enabled = 1;
 	
 	if(!warm_boot) {
-		if(brd_desc->sdram_size > 0) {
-			if(plltest()) {
-				ddrinit();
-				flush_bridge_cache();
+		if(memctrl_desc->type == MEMCTRL_NONE || board_desc->memctrl_memsize > 0) {
+			if(!memctrl_desc->plltest_required || !memctrl_desc->plltest_function(1)) {
+				if(memctrl_desc->initialization_required) {
 
-				if(memtest(8))
+					printf("I: Initializing %s\n", memctrl_desc->name); 
+					memctrl_desc->initialization_function(1);
+
+					if(memctrl_desc->cacheflush_required)
+						memctrl_desc->cacheflush_function(1);
+				}
+
+				if(memctrl_desc->memtest_function(16*1024, 0) == 0)
 					boot_sequence();
 				else
 					printf("E: Aborted boot on memory error\n");
-			} else
+			} else if(memctrl_desc->plltest_required) {
 				printf("E: Faulty SDRAM clocking\n");
+			}
 		} else {
-			printf("I: No SDRAM on this evaluation board, not booting\n");
+			printf("I: No SDRAM on this board, not booting\n");
 			sdram_enabled = 0;
 		}
 	} else {
@@ -607,7 +559,10 @@ int main(int warm_boot, char **dummy)
 		boot_sequence();
 	}
 
-	splash_showerr();
+	if(board_desc->vga) {
+		splash_showerr();
+	}
+
 	while(1) {
 		putsnonl("\e[1mBIOS>\e[0m ");
 		readstr(buffer, 64);
@@ -615,3 +570,4 @@ int main(int warm_boot, char **dummy)
 	}
 	return 0;
 }
+

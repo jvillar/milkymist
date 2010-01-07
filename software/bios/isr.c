@@ -15,20 +15,17 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <stdlib.h>
-#include <stdio.h>
-#include <board.h>
+#include <hw/interrupts.h>
+#include <irq.h>
+#include <uart.h>
+#include <hal/time.h>
 
-#include <hal/brd.h>
-
-const struct board_desc *board_desc;
-
-void brd_init()
+void isr()
 {
-	board_desc = get_board_desc();
-	if(board_desc == NULL) {
-		printf("BRD: Fatal error, unknown board\n");
-		while(1);
-	}
-	printf("BRD: detected %s\n", board_desc->name);
+	unsigned int irqs;
+	//printf("executing isr() pending=%08X; mask=%08X;\n", irq_pending(), irq_getmask());
+	irqs = irq_pending() & irq_getmask();
+
+	if(irqs & IRQ_TIMER0)
+		time_isr();
 }

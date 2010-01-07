@@ -59,4 +59,25 @@
 
 #define SDRAM_BASE		(0x40000000)
 
+unsigned int hpdmc_reset(int verbose);
+unsigned int hpdmc_plltest(int verbose);
+unsigned int hpdmc_initialization(int verbose);
+unsigned int hpdmc_cacheflush(int verbose);
+unsigned int hpdmc_memtest(int size, int verbose);
+
+unsigned int hpdmc_clkphase_up(int verbose);
+unsigned int hpdmc_clkphase_down(int verbose);
+unsigned int hpdmc_clkphase_reset(int verbose);
+
+unsigned int hpdmc_idelay_up(int verbose);
+unsigned int hpdmc_idelay_down(int verbose);
+unsigned int hpdmc_idelay_reset(int verbose);
+
+unsigned int hpdmc_dqsdelay_up(int verbose);
+unsigned int hpdmc_dqsdelay_down(int verbose);
+unsigned int hpdmc_dqsdelay_reset(int verbose);
+
+unsigned int hpdmc_calibrationmenu(int verbose);
+unsigned int hpdmc_autocalibration(int verbose);
+
 #endif /* __HW_HPDMC_H */

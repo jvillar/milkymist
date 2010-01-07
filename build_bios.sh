@@ -35,6 +35,29 @@ if [ "$?" != 0 ] ; then
 else
         echo "OK"
 fi
+
+echo -n "  HAL library..."
+echo >> $LOGFILE
+date >> $LOGFILE
+cd $BASEDIR/software/libhal && make >> $LOGFILE 2>&1
+if [ "$?" != 0 ] ; then
+        echo "FAILED"
+	exit 1
+else
+        echo "OK"
+fi
+
+echo -n "  Network library..."
+echo >> $LOGFILE
+date >> $LOGFILE
+cd $BASEDIR/software/libnet && make >> $LOGFILE 2>&1
+if [ "$?" != 0 ] ; then
+        echo "FAILED"
+	exit 1
+else
+        echo "OK"
+fi
+
 echo -n "  BIOS..."
 cd $BASEDIR/software/bios && make >> $LOGFILE 2>&1
 if [ "$?" != 0 ] ; then

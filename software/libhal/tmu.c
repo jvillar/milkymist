@@ -21,7 +21,6 @@
 #include <hw/interrupts.h>
 #include <hw/tmu.h>
 
-#include <hal/brd.h>
 #include <hal/tmu.h>
 
 #define TMU_TASKQ_SIZE 4 /* < must be a power of 2 */
@@ -32,10 +31,12 @@ static unsigned int produce;
 static unsigned int consume;
 static unsigned int level;
 static int cts;
+static int frequency;
 
 void tmu_init()
 {
 	unsigned int mask;
+	frequency = get_board_desc()->clk_frequency;
 
 	produce = 0;
 	consume = 0;
@@ -83,9 +84,9 @@ void tmu_isr()
 		clocks = CSR_TMUP_CLOCKS;
 		printf("TMU: Drawn pixels:                         %d\n", pixels);
 		printf("TMU: Processing time (clock cycles):       %d\n", clocks);
-		printf("TMU: Fill rate (Mpixels/s):                %d\n", (brd_desc->clk_frequency/1000000)*pixels/clocks);
-		printf("TMU: Frames per second:                    %d\n", brd_desc->clk_frequency/clocks);
-		printf("TMU: Geometry rate (Kvertices/s):          %d\n", (brd_desc->clk_frequency/1000)*((CSR_TMU_HMESHLAST+1)*(CSR_TMU_VMESHLAST+1))/clocks);
+		printf("TMU: Fill rate (Mpixels/s):                %d\n", (frequency/1000000)*pixels/clocks);
+		printf("TMU: Frames per second:                    %d\n", frequency/clocks);
+		printf("TMU: Geometry rate (Kvertices/s):          %d\n", (frequency/1000)*((CSR_TMU_HMESHLAST+1)*(CSR_TMU_VMESHLAST+1))/clocks);
 		printf("TMU: At point 1:\n");
 		printf("TMU:   - stalled transactions:             %d\n", CSR_TMUP_STALL1);
 		printf("TMU:   - completed transactions:           %d\n", CSR_TMUP_COMPLETE1);
