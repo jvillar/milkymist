@@ -18,7 +18,7 @@
 #ifndef __HAL_BRD_H
 #define __HAL_BRD_H
 
-extern const struct board_desc *brd_desc;
+extern const struct board_desc *board_desc;
 
 void brd_init();
 

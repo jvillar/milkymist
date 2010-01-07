@@ -18,7 +18,7 @@ clean:
 .PHONY: clean cversim isim 
 
 ../../../software/bios/bios.bin:
-	../../../build_bios.sh
+	cd ../../../ && ./build_bios.sh
 
 bios.rom: ../../../software/bios/bios.bin
 	../../../tools/bin2hex ../../../software/bios/bios.bin bios.rom 32768 8

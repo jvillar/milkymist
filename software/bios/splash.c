@@ -17,6 +17,8 @@
 
 #include <stdio.h>
 #include <system.h>
+#include <board.h>
+#include <memctrl.h>
 #include <hw/vga.h>
 
 #include "splash.h"
@@ -27,9 +29,15 @@ static unsigned short *splash_fb = NULL;
 
 void splash_display(void *fbadr)
 {
+
+	if( !get_board_desc()->vga ) {
+		printf("E: No VGA support on this board\n");
+		return;
+	}
+
 	int i;
 	unsigned short *splash_src = (unsigned short *)65536;
-	
+
 	printf("I: Displaying splash screen...");
 
 	splash_fb = (unsigned short *)fbadr;
@@ -38,7 +46,10 @@ void splash_display(void *fbadr)
 
 	for(i=0;i<splash_hres*splash_vres;i++)
 		splash_fb[i] = splash_src[i];
-	flush_bridge_cache();
+
+	if( !get_memctrl_desc()->cacheflush_required ) {
+		get_memctrl_desc()->cacheflush_function(0);
+	}
 
 	CSR_VGA_BASEADDRESS = (unsigned int)splash_fb;
 	CSR_VGA_RESET = 0;
@@ -48,6 +59,11 @@ void splash_display(void *fbadr)
 
 void splash_showerr()
 {
+	if( !get_board_desc()->vga ) {
+		printf("E: No VGA support on this board\n");
+		return;
+	}
+
 	int x, y;
 	unsigned short color = 0xF800;
 
@@ -64,5 +80,8 @@ void splash_showerr()
 	for(;y<splash_vres;y++)
 		for(x=0;x<splash_hres;x++)
 			splash_fb[splash_hres*y+x] = color;
-	flush_bridge_cache();
+
+	if( !get_memctrl_desc()->cacheflush_required ) {
+		get_memctrl_desc()->cacheflush_function(0);
+	}
 }

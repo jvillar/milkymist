@@ -22,7 +22,6 @@
 #include <hw/sysctl.h>
 #include <hw/gpio.h>
 
-#include <hal/brd.h>
 #include <hal/slowout.h>
 #include <hal/hdlcd.h>
 
@@ -57,9 +56,9 @@ static void hdlcd_send_byte(char c, int isdata)
 
 void hdlcd_init()
 {
-	setup_delay = SETUP_DELAY*(brd_desc->clk_frequency/10000000);
-	clock_delay = CLOCK_DELAY*(brd_desc->clk_frequency/10000000);
-	op_delay = OP_DELAY*(brd_desc->clk_frequency/10000000);
+	setup_delay = SETUP_DELAY*(get_board_desc()->clk_frequency/10000000);
+	clock_delay = CLOCK_DELAY*(get_board_desc()->clk_frequency/10000000);
+	op_delay = OP_DELAY*(get_board_desc()->clk_frequency/10000000);
 
 	if(!(CSR_GPIO_IN & GPIO_DIP3)) {
 		/* Select 4-bit operation on the LCD */
