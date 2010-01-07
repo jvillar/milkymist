@@ -1,5 +1,6 @@
 #!/bin/bash
 
+source setup.inc
 BASEDIR=`pwd`
 LOGFILEHOST=$BASEDIR/tools.log
 LOGFILE=$BASEDIR/software.log
@@ -58,8 +59,10 @@ else
         echo "OK"
 fi
 
-echo -n "  BIOS..."
-cd $BASEDIR/software/bios && make >> $LOGFILE 2>&1
+echo -n "  BIOS for $BOARD..."
+	cd $BASEDIR/software/bios && make clean >> $LOGFILE 2>&1
+	cd $BASEDIR/software/bios && make BOARD=$BOARD >> $LOGFILE 2>&1
+
 if [ "$?" != 0 ] ; then
         echo "FAILED"
 	exit 1

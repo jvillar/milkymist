@@ -312,6 +312,7 @@ extern void	copy_filename (unsigned char *dst, unsigned char *src, int size);
 extern char         *inet_ntoa(unsigned long);
 extern unsigned long inet_aton(const char *);
 
+int ctrlc();
 /**********************************************************************/
 
 #endif /* __NET_H__ */

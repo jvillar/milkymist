@@ -46,8 +46,7 @@ if [ $BOARD == "xilinx-ml401" ] ; then
 else
 	if [ $BOARD == "xilinx-s3sk" ] ; then
 		echo -n "  Writing flash..."
-		cd $BASEDIR/boards/xilinx-s3sk/synthesis && make -f common.mak flashmem
-		ml401-flasher $BIOSFILE >> $LOGFILE 2>&1
+		cd $BASEDIR/boards/xilinx-s3sk/synthesis && make -f common.mak flashmem >> $LOGFILE 2>&1
 		if [ "$?" != 0 ] ; then
 			echo "FAILED"
 			exit 1

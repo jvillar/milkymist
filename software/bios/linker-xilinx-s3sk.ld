@@ -6,8 +6,8 @@ __DYNAMIC = 0;
 MEMORY {
 	flash : ORIGIN = 0x00000000, LENGTH = 0x800000   /* 8M */
 	sram  : ORIGIN = 0x20000000, LENGTH = 0x1000     /* 4k */
-	sdram_bot : ORIGIN = 0x40000000, LENGTH = 0x3F00000  /* 63M */
-	sdram_top : ORIGIN = 0x42000000, LENGTH = 0x0100000  /*  1M */
+	sdram_bot : ORIGIN = 0x40000000, LENGTH = 0x1000000  /* 16M */
+	sdram_top : ORIGIN = 0x41000000, LENGTH = 0x1000000  /* 16M */
 }
 
 SECTIONS

@@ -19,7 +19,8 @@ clean:
 
 # DO NOT DELETE
 
-net.o: ../../software/include/net/net.h ../../software/include/net/arp.h ../../software/include/net/bootp.h ../../software/include/net/rarp.h ../../software/include/net/tftp.h
+net.o: ../../software/include/net/net.h ../../software/include/net/arp.h ../../software/include/net/bootp.h ../../software/include/net/rarp.h 
+net.o: ../../software/include/net/tftp.h ../../software/include/uart.h 
 arp.o: ../../software/include/net/net.h ../../software/include/net/arp.h ../../software/include/net/bootp.h ../../software/include/net/tftp.h
 bootp.o: ../../software/include/net/net.h ../../software/include/net/arp.h ../../software/include/net/bootp.h ../../software/include/net/tftp.h
 rarp.o: ../../software/include/net/net.h ../../software/include/net/bootp.h ../../software/include/net/rarp.h ../../software/include/net/tftp.h

@@ -1,4 +1,5 @@
 setMode -bscan
+cleancablelock
 setCable -p auto
 identify
 assignfile -p 2 -file system.mcs

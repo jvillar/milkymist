@@ -1,3 +1,5 @@
+SPORT=/dev/ttyUSB0
+
 prom: build/system.mcs
 
 timing: build/system-routed.twr
@@ -12,13 +14,13 @@ flash: build/system.mcs
 	cd build && impact -batch ../flash.cmd
 
 flashmem: 
-	- killall gtkterm
-	cd ../../../ && ./build_bios.sh
+	cd ../../../ && export BOARD="xilinx-s3sk" && ./build_bios.sh
 	cd ../../../tools/norflasher && impact -batch impact.batch
-	../../../tools/norflasher/norflasher.py /dev/ttyUSB0 --erase --program ../../../software/bios/bios.mcs
+	../../../tools/norflasher/norflasher.py $(SPORT) --erase --program ../../../software/bios/bios.mcs
 
 implement: flashmem load
-	gtkterm -p /dev/ttyUSB0 -s 115200 &
+	- killall gtkterm
+	gtkterm -p $(SPORT) -s 115200 &
 
 build/system.ncd: build/system.ngd
 	cd build && map system.ngd

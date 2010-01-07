@@ -95,6 +95,8 @@
 #include <hal/time.h>
 #include <string.h>
 #include <stdio.h>
+#include <uart.h>
+
 
 /** BOOTP EXTENTIONS **/
 
@@ -242,7 +244,6 @@ restart:
 	 *	someone sets `NetQuit'.
 	 */
 	for (;;) {
-//		WATCHDOG_RESET();
 		/*
 		 *	Check the ethernet for a new packet.  The ethernet
 		 *	receive routine will process it.
@@ -252,12 +253,13 @@ restart:
 		/*
 		 *	Abort if ctrl-c was pressed.
 		 *
+		 */
 		if (ctrlc()) {
 		    eth_halt();
 			printf("\nAbort\n");
 			return 0;
 		}
-		*/
+
 
 		/*
 		 *	Check for a timeout, and run the timeout handler
@@ -732,4 +734,14 @@ unsigned long inet_aton(const char *cp) {
 	return ret;
 }
 
+int ctrlc () {
+	char c;
+	if(readchar_nonblock()) {
+		c = readchar();
+		if(c == 0x03) {
+			return 1;
+		}
+	}
+	return 0;
+}
 

@@ -278,6 +278,28 @@ static void uptime()
 	printf("System up for %d days, %02d:%02d:%02d\n", days, hours, mins, secs);
 }
 
+static void tftp(char *filename, char *server)
+{
+	unsigned int ip = 0xC0A80001;
+
+	if((*filename == 0)) {
+		printf("\n\ntftp <filename> [<server ip>]\n");
+		printf("\n\nserver ip defaults to 192.168.0.1\n");
+	}
+	else {
+		if((*filename != 0)) {
+			ip = inet_aton(server);
+		}
+
+		netctrl_desc->srv_ip = ip;
+		TftpSetFileName(filename);
+
+		NetLoop(TFTP);
+	}
+
+	return 0;
+}
+
 static void netcfg(char *ip, char *mask, char *gateway)
 {
 	if((*ip == 0) || (*mask == 0) || (*gateway == 0)) {
@@ -409,8 +431,7 @@ static void do_command(char *c)
 	}
 	else if(strcmp(token, "tftp") == 0) {
 		if(netctrl_desc->type != NETCTRL_NONE) {
-			TftpSetFileName(get_token(&c));
-			NetLoop(TFTP);
+			tftp(get_token(&c), get_token(&c));
 		}
 		else
 			printf("E: Network controller is not present\n");

@@ -4,6 +4,7 @@ include $(MMDIR)/software/include.mak
 OBJECTS=crt0.o isr.o main.o boot.o splash.o
 SEGMENTS=-j .text -j .data -j .rodata
 
+
 all: bios_splash.bin bios.mcs
 
 %.bin: %.elf
@@ -12,7 +13,8 @@ all: bios_splash.bin bios.mcs
 	$(MMDIR)/tools/crc32 $@ write
 
 bios.elf: linker.ld $(OBJECTS)
-	$(LD) $(LDFLAGS) -T linker.ld -N -o $@ $(OBJECTS) -L$(MMDIR)/software/libbase -L$(MMDIR)/software/libhal -L$(MMDIR)/software/libnet -lbase-light -lhal -lnet
+	(test -f "linker-$(BOARD).ld" && $(LD) $(LDFLAGS) -T linker-$(BOARD).ld -N -o $@ $(OBJECTS) -L$(MMDIR)/software/libbase -L$(MMDIR)/software/libhal -L$(MMDIR)/software/libnet -lbase-light -lhal -lnet) \
+	|| (test ! -f "linker-$(BOARD).ld" && $(LD) $(LDFLAGS) -T linker.ld -N -o $@ $(OBJECTS) -L$(MMDIR)/software/libbase -L$(MMDIR)/software/libhal -L$(MMDIR)/software/libnet -lbase-light -lhal -lnet)
 	chmod -x $@
 
 bios.lst: bios.elf
