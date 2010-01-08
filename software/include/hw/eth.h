@@ -174,7 +174,8 @@ typedef struct _eth_bd {
 
 void eth_init (void (*rec)(volatile unsigned char *, int));
 void *eth_get_tx_buf (void);
-void eth_send (void *buf, unsigned int len);
+void eth_send (void *pkt, unsigned int len);
+void eth_send_data (void *buf, unsigned int len);
 unsigned int eth_rx (void);
 void eth_halt(void);
 void init_rx_bd_pool(void);

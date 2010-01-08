@@ -287,7 +287,7 @@ static void tftp(char *filename, char *server)
 		printf("\n\nserver ip defaults to 192.168.0.1\n");
 	}
 	else {
-		if((*filename != 0)) {
+		if((*server != 0)) {
 			ip = inet_aton(server);
 		}
 

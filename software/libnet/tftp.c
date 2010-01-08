@@ -267,8 +267,9 @@ TftpStart (void)
 	);
 #endif /* DEBUG */
 
-	printf ("TFTP from server ");	print_IPaddr (NetServerIP);
-	printf ("; our IP address is ");	print_IPaddr (NetOurIP);
+	printf ("TFTP from server %s", inet_ntoa(NetServerIP));
+	printf ("; our IP address is %s", inet_ntoa(NetOurIP));
+
 
 	// Check if we need to send across this subnet
 	if (NetOurGatewayIP && NetOurSubnetMask) {
@@ -290,9 +291,10 @@ TftpStart (void)
 
 	printf("\n");
 
-	printf ("Load address: 0x%lx\n", get_board_desc()->memctrl_membase);
-
+	printf ("Load address: 0x%lx\n\n", get_board_desc()->memctrl_membase);
+	printf ("Press Ctrl-C to abort...\n");
 	printf ("Loading: *\b");
+
 
 	NetSetTimeout (TIMEOUT * 1000, TftpTimeout);
 	NetSetHandler (TftpHandler);

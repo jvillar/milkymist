@@ -198,10 +198,20 @@ void *eth_get_tx_buf () {
 	return (void *)add;
 }
 
-
 // Send a packet at address
-void eth_send (void *buf, unsigned int len) {
+void eth_send(void *pkt, unsigned int len) {
+	unsigned char *p;
+	p = eth_get_tx_buf();
+
+	memcpy(p, (void *) pkt, len);
+
+	eth_send_data(p, len);
+}
+
+// Send data at address
+void eth_send_data (void *buf, unsigned int len) {
 	eth_bd  *bd;
+
 
 	bd = (eth_bd *) ETH_BD_BASE;
 

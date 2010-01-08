@@ -165,11 +165,14 @@ int NetLoop(proto_t protocol)
 #endif
 		}
 	}
-
+#ifdef ET_DEBUG
 	printf("Halting ethernet\n");
-	eth_halt();
+#endif
+	get_netctrl_desc()->halt_function();
+#ifdef ET_DEBUG
 	printf("initializing ethernet\n");
-	eth_init(NetReceive); // eth_init(print_packet); //FIXED
+#endif
+	get_netctrl_desc()->init_function(NetReceive);
 
 restart:
 
@@ -239,6 +242,7 @@ restart:
 	}
 
 	NetBootFileXferSize = 0;
+
 	/*
 	 *	Main packet reception loop.  Loop receiving packets until
 	 *	someone sets `NetQuit'.
@@ -248,14 +252,14 @@ restart:
 		 *	Check the ethernet for a new packet.  The ethernet
 		 *	receive routine will process it.
 		 */
-			eth_rx();
+			get_netctrl_desc()->receive_function();
 
 		/*
 		 *	Abort if ctrl-c was pressed.
 		 *
 		 */
 		if (ctrlc()) {
-		    eth_halt();
+		    get_netctrl_desc()->halt_function();
 			printf("\nAbort\n");
 			return 0;
 		}
@@ -284,7 +288,7 @@ restart:
 			if (NetBootFileXferSize > 0) {
 				printf("Bytes transferred = %ld (%lx hex)\n", NetBootFileXferSize, NetBootFileXferSize);
 			}
-			eth_halt();
+			get_netctrl_desc()->halt_function();
 			return NetBootFileXferSize;
 
 		case NETLOOP_FAIL:
@@ -324,12 +328,7 @@ void NetSetTimeout(int msecs, thand_f * f) {
 
 
 void NetSendPacket(volatile unsigned char * pkt, int len) {
-	unsigned char *p;
-	p = eth_get_tx_buf();
-
-	memcpy(p, (void *) pkt, len);
-
-	eth_send(p, len);
+	get_netctrl_desc()->send_function((void *) pkt, len);
 }
 
 
